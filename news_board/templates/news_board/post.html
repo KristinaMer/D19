@@ -1,0 +1,112 @@
+{% extends 'news_board/base.html' %}
+{% load embed_video_tags %}
+
+{%block content%}
+<br>
+
+<br>
+<br>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+            {% if news.image %}
+            <img class="img-fluid rounded " src="{{ news.image.url }}" alt="">
+            {% endif %}
+            <hr>
+            <p class="lead">
+                {% video news.video as my_video %}
+                {% video my_video 'small' %}
+                {% endvideo %}
+            </p>
+            <p class="lead">
+                {{ news.content }}
+            </p>
+            <p class="lead">
+            <p class="text-right">Category: {{ news.category }}</p>
+            <hr>
+            <p class="lead text-right">Author: {{ news.user }}</p>
+            <hr>
+            <p class="text-right">Date: {{ news.added}}</p>
+            {% if user == news.user %}
+            <a href="{% url 'delete_post' news.pk %}" class="btn btn-danger">Delete</a>
+            <a href="{% url 'update_post' news.pk %}" class="btn btn-secondary">Edit</a>
+            {% endif %}
+            <hr>
+        </div>
+
+
+    </div>
+</div>
+<h3>Leave your comment!</h3>
+<strong class="text-secondary">Comment will be added after confirmation</strong>
+<div id="comments_section">
+
+    {% if user.is_authenticated %}
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            {{ comment_form }}
+            <input type="submit" value="Save">
+        </div>
+    </form>
+    {% else %}
+    <a class="btn btn-outline-info" href="{% url 'login' %}?next={{request.path}}">Log in to add a comment!</a><br>
+    {% endif %}
+
+    {% if comments_page %}
+    <strong class="text-secondary">{{ object.number_of_comments }} Comment{{ object.number_of_comments | pluralize }}</strong>
+
+    <hr>
+
+    <ul>
+        {% for comment in comments_page %}
+        {% if comment.approved == True and user != news.user%}
+        <div class="comment">
+            <div class="date">
+                {{ comment.added }}
+            </div>
+            <strong>{{ comment.user }}</strong>
+            <p>{{ comment.body|linebreaks }}</p>
+        {% endif%}
+        {% if user == news.user%}
+        <div class="comment">
+            <div class="date">
+                {{ comment.added }}
+            </div>
+            <strong>{{ comment.user }}</strong>
+            <p>{{ comment.body|linebreaks }}</p>
+        {% if comment.approved == True%}
+        <span class="pull-right mr-3"><a href="{% url 'comment_disapproved' comment.id %}">Delete</a></span>
+        <hr>
+        {% else %}
+        <span class="pull-right mr-3"><a href="{% url 'comment_approved' comment.id %}">Approved</a></span>
+        <hr>
+        {% endif%}
+        {% endif%}
+
+        {% endfor %}
+        </div></div></ul>
+    {% else %}
+    <strong class="text-secondary">No comments yet...</strong>
+    {% endif %}
+
+</div>
+<div class="pagination">
+    <span class="step-links">
+        {% if comments_page.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ comments_page.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ comments_page.number }} of {{ comments_page.paginator.num_pages }}.
+        </span>
+
+        {% if comments_page.has_next %}
+            <a href="?page={{ comments_page.next_page_number }}">next</a>
+            <a href="?page={{ comments_page.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+
+{% endblock %}
